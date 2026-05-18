@@ -1,16 +1,46 @@
-# Big files we want to avoid tracking
-fake_news_classifier.zip
-fake_news_classifier/model.safetensors
-data/True.csv
-data/Fake.csv
-
-# Catch-all just in case
-*.zip
-*.safetensors
+# Dataset — too large to commit
+data/
 *.csv
 
-# Jupyter & Python junk
+# Saved model files
+backend/models/*.pkl
+backend/models/*.keras
+backend/models/*.h5
+!backend/models/.gitkeep
+
+# Python
 __pycache__/
-.ipynb_checkpoints/
 *.pyc
+*.pyo
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Environment
+.env
+.env.local
+backend/.env
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# OS / Editor
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Large assets
+*.zip
+*.safetensors
+fake_news_classifier/
+
+# Screenshots (tracked, but keep empty during dev)
