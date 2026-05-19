@@ -24,4 +24,4 @@ PORT: int = int(os.getenv("PORT", "8000"))
 LIME_NUM_SAMPLES: int = int(os.getenv("LIME_NUM_SAMPLES", "300"))
 LIME_NUM_FEATURES: int = int(os.getenv("LIME_NUM_FEATURES", "12"))
 
-MODELS_DIR: Path = Path(__file__).parent.parent / "models"
+MODELS_DIR: Path = Path(__file__).resolve().parent.parent / "models"
