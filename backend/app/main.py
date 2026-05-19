@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-from .config import ALLOWED_ORIGINS, LOG_LEVEL
+from .config import ALLOWED_ORIGINS, LOG_LEVEL, ENVIRONMENT, PORT
 from .model import load_models, predict, get_available_models
 from .explainability import get_lime_explanation, get_shap_explanation
 from .scraper import scrape_article
@@ -17,17 +17,27 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    logger.info("Loading models...")
+    logger.info("─" * 50)
+    logger.info("TruthLens API starting up")
+    logger.info("Environment : %s", ENVIRONMENT)
+    logger.info("Port        : %s", PORT)
+    logger.info("CORS origins: %s", ALLOWED_ORIGINS)
+    logger.info("Loading ML models…")
     load_models()
-    logger.info("Ready.")
+    available = get_available_models()
+    logger.info("Models ready: %s", available if available else "NONE — check models/ directory")
+    logger.info("─" * 50)
     yield
+    logger.info("TruthLens API shutting down")
 
 
 app = FastAPI(
     title="TruthLens API",
     description="Explainable AI platform for misinformation analysis",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
+    docs_url="/docs" if ENVIRONMENT != "production" else None,
+    redoc_url="/redoc" if ENVIRONMENT != "production" else None,
 )
 
 app.add_middleware(
@@ -69,8 +79,9 @@ class AnalyzeUrlRequest(BaseModel):
 def root():
     return {
         "name": "TruthLens API",
-        "version": "1.0.0",
+        "version": "2.0.0",
         "status": "ok",
+        "environment": ENVIRONMENT,
         "available_models": get_available_models(),
     }
 
@@ -78,7 +89,11 @@ def root():
 @app.get("/health")
 def health():
     models = get_available_models()
-    return {"status": "ok" if models else "degraded", "models_loaded": len(models)}
+    return {
+        "status": "ok" if models else "degraded",
+        "models_loaded": len(models),
+        "models": models,
+    }
 
 
 @app.get("/models")
@@ -94,7 +109,7 @@ def predict_endpoint(req: PredictRequest):
         raise HTTPException(503, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(400, detail=str(exc))
-    except Exception as exc:
+    except Exception:
         logger.exception("Prediction error")
         raise HTTPException(500, detail="Internal prediction error")
 
@@ -109,7 +124,7 @@ def explain_endpoint(req: ExplainRequest):
         return get_lime_explanation(req.text, req.model, req.num_features, req.num_samples)
     except ValueError as exc:
         raise HTTPException(400, detail=str(exc))
-    except Exception as exc:
+    except Exception:
         logger.exception("Explanation error")
         raise HTTPException(500, detail="Explanation failed — model may not be loaded")
 
@@ -120,10 +135,16 @@ def analyze_url_endpoint(req: AnalyzeUrlRequest):
         article = scrape_article(req.url)
     except ValueError as exc:
         raise HTTPException(400, detail=str(exc))
+    except Exception:
+        logger.exception("Unexpected scrape error | url=%s", req.url)
+        raise HTTPException(500, detail="Something went wrong while analyzing the URL.")
 
     try:
         result = predict(article["text"], req.model)
     except RuntimeError as exc:
         raise HTTPException(503, detail=str(exc))
+    except Exception:
+        logger.exception("Prediction error after scrape | url=%s", req.url)
+        raise HTTPException(500, detail="Article was fetched but prediction failed.")
 
     return {**result, "article": article}

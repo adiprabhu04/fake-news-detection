@@ -1,12 +1,12 @@
-# TruthLens — Explainable AI Misinformation Detection
+# TruthLens — Explainable Misinformation Detection
 
-A production-grade, full-stack AI platform for fake news detection with real-time explainability.
-Not just a prediction — see *which words* drove each verdict, powered by LIME and SHAP.
+A production-grade, full-stack AI platform for misinformation analysis with real-time explainability. The model classifies articles as likely real or likely fake and explains *which specific words* drove the prediction using LIME attribution.
 
 [![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
-[![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react)](https://react.dev)
+[![Next.js](https://img.shields.io/badge/Frontend-Next.js_15-000?style=flat-square&logo=next.js)](https://nextjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript)](https://typescriptlang.org)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3-38BDF8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
 [![TensorFlow](https://img.shields.io/badge/ML-TensorFlow-FF6F00?style=flat-square&logo=tensorflow)](https://tensorflow.org)
-[![License](https://img.shields.io/badge/License-MIT-6366f1?style=flat-square)](LICENSE)
 
 ---
 
@@ -14,128 +14,157 @@ Not just a prediction — see *which words* drove each verdict, powered by LIME 
 
 | Landing Page | Article Analyzer |
 |---|---|
-| *(see screenshots/)* | *(see screenshots/)* |
+| *(add screenshot)* | *(add screenshot)* |
+
+---
+
+## Features
+
+- **Multi-model classification** — switch between 4 ML models per request (Random Forest, Logistic Regression, Naive Bayes, LSTM)
+- **LIME explainability** — per-word importance scores showing which terms pushed the prediction toward Fake or Real
+- **SHAP attribution** — global + local feature attribution for sklearn models
+- **Word highlighting** — color-coded article text with hover tooltips showing exact attribution scores
+- **Context signals** — heuristic credibility indicators (sensational language, trusted domain, emotional intensity)
+- **URL scraping** — paste any article link; content is extracted and analyzed automatically
+- **Confidence ring** — animated SVG confidence indicator with probability score
+- **Analysis history** — last 20 analyses persisted to localStorage with click-to-restore
+- **Staged loading** — terminal-style loading messages during analysis
+- **Dark premium UI** — Linear/Vercel/Raycast-inspired design system
 
 ---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                         TruthLens                               │
-│                                                                 │
-│   ┌─────────────────┐          ┌──────────────────────────┐    │
-│   │  React + Vite   │  REST    │     FastAPI Backend       │    │
-│   │  Tailwind CSS   │ ──────▶  │  ┌────────────────────┐  │    │
-│   │  Recharts       │          │  │  model.py (4 models)│  │    │
-│   │  React Router   │          │  │  preprocess.py      │  │    │
-│   └─────────────────┘          │  │  explainability.py  │  │    │
-│         ▲                      │  │  scraper.py         │  │    │
-│   Vercel│                      │  └────────────────────┘  │    │
-│         │                      │   Render (Docker)         │    │
-│         └──────────────────────┘                           │    │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-### Models
-
-| Model | Type | Accuracy | Explainability |
-|---|---|---|---|
-| Logistic Regression | Classical ML | ~95% | LIME + SHAP |
-| Naive Bayes | Classical ML | ~94% | LIME |
-| Random Forest | Classical ML | ~96% | LIME + SHAP |
-| LSTM | Deep Learning | ~98% | LIME |
-
----
-
-## Features
-
-- **Multi-model classification** — switch between 4 ML models per request
-- **LIME explainability** — word-level importance scores for every prediction
-- **SHAP values** — global + local feature attribution for sklearn models
-- **Word highlighting** — color-coded article text showing fake/real signal words
-- **URL scraping** — paste any article link; content is fetched and analyzed automatically
-- **Confidence scoring** — calibrated probability output, not just a binary label
-- **REST API** — clean JSON endpoints, ready for integration or extension
-- **Dark mode UI** — Linear/Vercel-inspired design system
-
----
-
-## Project Structure
-
-```
 fake-news-detection/
 │
-├── backend/
+├── backend/                     # Python · FastAPI
 │   ├── app/
-│   │   ├── main.py              # FastAPI app, CORS, lifespan model loading
+│   │   ├── main.py              # FastAPI app, CORS, lifespan, endpoints
 │   │   ├── model.py             # Model loading, prediction (sklearn + LSTM)
-│   │   ├── preprocess.py        # clean_text / clean_text_fast / clean_text_lite
+│   │   ├── preprocess.py        # Text cleaning (NLTK, TF-IDF pipeline)
 │   │   ├── explainability.py    # LIME + SHAP wrappers, word highlight mapping
-│   │   ├── scraper.py           # BeautifulSoup URL scraper with fallback chain
-│   │   ├── config.py            # Centralized env var config (python-dotenv)
-│   │   └── utils.py             # timer decorator, sanitize_model_name, truncate
-│   │
+│   │   ├── scraper.py           # BeautifulSoup article scraper
+│   │   ├── config.py            # Env var config (python-dotenv)
+│   │   └── utils.py             # Helpers
 │   ├── models/                  # Saved .pkl / .keras files (gitignored)
-│   ├── train_models.py          # One-time training script (--data-dir, --skip-lstm)
+│   ├── train_models.py          # One-time training script
 │   ├── requirements.txt
 │   ├── .env.example
 │   └── Dockerfile
 │
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Home.jsx              # Landing page with terminal demo
-│   │   │   └── Analyzer.jsx          # Main analysis interface
-│   │   ├── components/
-│   │   │   ├── Navbar.jsx
-│   │   │   ├── PredictionCard.jsx    # Verdict + animated confidence bar
-│   │   │   ├── ExplainabilityPanel.jsx  # LIME chart, word highlights, summary
-│   │   │   ├── ModelSelector.jsx
-│   │   │   ├── SkeletonLoader.jsx    # Loading skeletons
-│   │   │   ├── AnalysisHistory.jsx   # Last 8 analyses, click to restore
-│   │   │   └── Toast.jsx             # Toast notification container
-│   │   ├── hooks/
-│   │   │   └── useToast.js           # Toast state management hook
-│   │   ├── lib/api.js                # Axios API client
-│   │   └── index.css                 # Design system (Tailwind + custom classes)
-│   ├── package.json
-│   ├── tailwind.config.js
-│   ├── .env.example
-│   └── vercel.json
-│
-├── notebooks/
-│   └── final-project.ipynb      # Original research notebook
-│
-└── screenshots/
+└── frontend/                    # TypeScript · Next.js 15 · Tailwind CSS
+    ├── src/
+    │   ├── app/
+    │   │   ├── layout.tsx           # Root layout, fonts, global metadata
+    │   │   ├── template.tsx         # Route transition wrapper (Framer Motion)
+    │   │   ├── page.tsx             # Home page (Hero, Bento, Stats, TechStack)
+    │   │   ├── error.tsx            # Global error boundary
+    │   │   ├── not-found.tsx        # Custom 404 page
+    │   │   ├── globals.css          # Design tokens, component classes
+    │   │   └── analyze/
+    │   │       ├── page.tsx         # /analyze route (server component + metadata)
+    │   │       └── AnalyzerShell.tsx  # Client shell for dynamic import
+    │   ├── components/
+    │   │   ├── layout/Navbar.tsx
+    │   │   ├── home/                # HeroSection, BentoGrid, StatsSection, …
+    │   │   ├── analyzer/
+    │   │   │   ├── AnalyzerClient.tsx   # Main interactive analyzer
+    │   │   │   ├── PredictionCard.tsx   # Verdict + SVG confidence ring
+    │   │   │   ├── ExplainabilityPanel.tsx  # LIME bars, word highlights
+    │   │   │   ├── ContextSignals.tsx   # Heuristic credibility indicators
+    │   │   │   └── AnalysisHistory.tsx  # localStorage history list
+    │   │   └── ui/
+    │   │       ├── ModelSelector.tsx
+    │   │       ├── SkeletonLoader.tsx
+    │   │       ├── Toast.tsx
+    │   │       └── TerminalDemo.tsx
+    │   ├── hooks/
+    │   │   └── useToast.ts
+    │   └── lib/
+    │       ├── api.ts               # Axios client
+    │       ├── types.ts             # Shared TypeScript types
+    │       └── utils.ts             # cn() helper
+    ├── package.json
+    ├── tailwind.config.ts
+    ├── next.config.ts
+    ├── .env.example
+    └── vercel.json
 ```
 
 ---
 
-## Setup
+## ML Models
+
+| Model | Type | Accuracy | Explainability |
+|---|---|---|---|
+| Random Forest | Classical ML | ~97% | LIME + SHAP |
+| Logistic Regression | Classical ML | ~95% | LIME + SHAP |
+| Naive Bayes | Classical ML | ~94% | LIME |
+| LSTM | Deep Learning | ~98% | LIME |
+
+Training data: [ISOT Fake News Dataset](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset) — 44,919 labeled articles.
+
+---
+
+## API Reference
+
+### `GET /health`
+Returns service health and loaded model count.
+```json
+{ "status": "ok", "models_loaded": 4, "models": ["random_forest", ...] }
+```
+
+### `GET /models`
+Lists available model IDs.
+
+### `POST /predict`
+```json
+{ "text": "Article content…", "model": "random_forest" }
+```
+```json
+{ "prediction": "Fake", "confidence": 0.973, "model_used": "random_forest" }
+```
+
+### `POST /explain`
+```json
+{ "text": "...", "model": "random_forest", "method": "lime", "num_features": 12 }
+```
+Returns `word_importance`, `fake_indicators`, `real_indicators`, `highlighted_text`, `summary`.
+
+### `POST /analyze-url`
+```json
+{ "url": "https://example.com/article", "model": "random_forest" }
+```
+Scrapes the URL and returns prediction + article metadata in one call.
+
+---
+
+## Local Setup
 
 ### Prerequisites
 
 - Python 3.11+
 - Node.js 18+
-- The [ISOT Fake News Dataset](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset) (`Fake.csv` + `True.csv`)
+- [ISOT Fake News Dataset](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset) (`Fake.csv` + `True.csv`)
 
-### 1. Train the Models
+### 1. Train Models
 
 ```bash
-# Download dataset from Kaggle and place CSVs in data/
+# Place Fake.csv and True.csv in data/
 mkdir data
-# put Fake.csv and True.csv there
 
 cd backend
 pip install -r requirements.txt
 
-# Download NLTK data
+# Download required NLTK data
 python -c "import nltk; [nltk.download(x) for x in ['punkt_tab','stopwords','wordnet','omw-1.4']]"
 
-# Train all models (~5–10 min, --skip-lstm for faster run)
+# Train all models (add --skip-lstm to skip TensorFlow dependency)
 python train_models.py --data-dir ../data
 ```
+
+Trained model files are saved to `backend/models/`.
 
 ### 2. Start the Backend
 
@@ -145,50 +174,40 @@ cp .env.example .env          # edit ALLOWED_ORIGINS if needed
 uvicorn app.main:app --reload --port 8000
 ```
 
-API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+API docs: http://localhost:8000/docs
 
 ### 3. Start the Frontend
 
 ```bash
 cd frontend
 npm install
-cp .env.example .env          # VITE_API_URL=http://localhost:8000
+cp .env.example .env          # set NEXT_PUBLIC_API_URL=http://localhost:8000
 npm run dev
 ```
 
-App: [http://localhost:5173](http://localhost:5173)
+App: http://localhost:3000
 
 ---
 
-## API Reference
+## Environment Variables
 
-### `GET /`
-Health check and available models list.
+### Frontend (`frontend/.env`)
 
-### `GET /models`
-Returns currently loaded model IDs and metadata.
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_API_URL` | Yes | Backend API base URL (no trailing slash) |
+| `NEXT_PUBLIC_APP_URL` | No | Public canonical URL — used for OpenGraph metadata |
 
-### `POST /predict`
-```json
-{ "text": "...", "model": "random_forest" }
-```
-Response:
-```json
-{ "prediction": "Fake", "confidence": 0.97, "model_used": "Random Forest" }
-```
+### Backend (`backend/.env`)
 
-### `POST /explain`
-```json
-{ "text": "...", "model": "random_forest", "method": "lime", "num_features": 10 }
-```
-Response includes `word_importance`, `fake_indicators`, `real_indicators`, `highlighted_text`.
-Set `method: "shap"` for sklearn models to also get SHAP values.
-
-### `POST /analyze-url`
-```json
-{ "url": "https://...", "model": "random_forest" }
-```
-Scrapes the URL, runs prediction and explainability in one call.
+| Variable | Required | Description |
+|---|---|---|
+| `ALLOWED_ORIGINS` | Yes | Comma-separated CORS origins |
+| `PORT` | No | Server port (default: 8000; Render injects this automatically) |
+| `ENVIRONMENT` | No | `development` or `production` (hides /docs in production) |
+| `LOG_LEVEL` | No | Python logging level (default: `INFO`) |
+| `LIME_NUM_SAMPLES` | No | LIME perturbation count — lower is faster (default: 300) |
+| `LIME_NUM_FEATURES` | No | Max features in LIME explanation (default: 12) |
 
 ---
 
@@ -196,71 +215,86 @@ Scrapes the URL, runs prediction and explainability in one call.
 
 ### Backend → Render
 
-1. Push to GitHub
+1. Push repository to GitHub
 2. Create a new Render **Web Service**, connect the repo
-3. Set **Root Directory**: `backend`
+3. **Root directory**: `backend`
 4. **Build command**: `pip install -r requirements.txt`
 5. **Start command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-6. Add env var: `ALLOWED_ORIGINS=https://your-app.vercel.app`
+6. Add environment variable: `ALLOWED_ORIGINS=https://your-app.vercel.app`
+7. Add environment variable: `ENVIRONMENT=production`
 
-> **Note**: Render's free tier doesn't persist disk. Upload pre-trained model `.pkl` files via Render Disk or use a cloud storage bucket and load on startup.
+> **Note on model files**: Render's free tier does not persist disk between deploys. Either commit the trained model `.pkl` files to the repository, use Render Persistent Disk, or load models from an S3-compatible bucket on startup.
 
 ### Frontend → Vercel
 
-1. Connect the repo on [vercel.com](https://vercel.com)
-2. Set **Root Directory**: `frontend`
-3. Add env var: `VITE_API_URL=https://your-backend.onrender.com`
-4. Deploy — `vercel.json` handles SPA routing automatically
+1. Connect the repository on [vercel.com](https://vercel.com)
+2. **Framework preset**: Next.js (auto-detected via `vercel.json`)
+3. **Root directory**: `frontend`
+4. Add environment variable: `NEXT_PUBLIC_API_URL=https://your-backend.onrender.com`
+5. Add environment variable: `NEXT_PUBLIC_APP_URL=https://your-app.vercel.app`
+6. Deploy
+
+### Connecting Frontend ↔ Backend
+
+After both services are live:
+
+1. Copy the Render backend URL (e.g. `https://truthlens-api.onrender.com`)
+2. Set `NEXT_PUBLIC_API_URL` in Vercel to that URL
+3. Copy the Vercel frontend URL (e.g. `https://truthlens.vercel.app`)
+4. Set `ALLOWED_ORIGINS` in Render to that URL
+5. Redeploy both services
 
 ---
 
-## Explainability Deep-Dive
+## Explainability
 
-### LIME (Local Interpretable Model-agnostic Explanations)
+### LIME
 
-LIME works by perturbing the input text (randomly masking words), running each perturbation through the model, and fitting a simple linear model to the changes in output. This reveals which words are most influential for a specific prediction.
+LIME (Local Interpretable Model-agnostic Explanations) perturbs the input by randomly masking words, runs each variant through the classifier, and fits a linear model to the changes in output probability. Words whose removal most shifts the prediction receive the highest importance scores.
 
-- Works for all 4 models (model-agnostic)
-- 500 perturbations per explanation (~1–3 seconds)
-- Returns per-word importance scores in [-1, +1]
-  - Positive score → pushes toward **Fake**
-  - Negative score → pushes toward **Real**
+- Positive score → pushes toward **Fake**
+- Negative score → pushes toward **Real**
+- Works with all four models (model-agnostic)
+- ~300 perturbations per call, ~3–5 seconds
 
-### SHAP (SHapley Additive exPlanations)
+### SHAP
 
-Available for Logistic Regression and Random Forest via dedicated explainers:
+Available for Logistic Regression and Random Forest:
 - `LinearExplainer` for Logistic Regression — exact attribution
 - `TreeExplainer` for Random Forest — efficient tree-based SHAP
 
-SHAP values satisfy desirable properties like local accuracy, missingness, and consistency — making them the gold standard for feature attribution.
+SHAP values satisfy local accuracy, missingness, and consistency properties.
 
 ---
 
-## Future Enhancements
+## Performance
 
-- [ ] BERT / DistilBERT fine-tuned classifier
-- [ ] Global SHAP summary plots (beeswarm, bar)
-- [ ] Model comparison view (run all models in parallel)
+| Operation | Latency |
+|---|---|
+| sklearn prediction | < 100 ms |
+| LSTM prediction | ~200 ms |
+| LIME explanation | 3–5 s (300 perturbations) |
+| URL scraping | 1–5 s (network-dependent) |
+
+---
+
+## Future Improvements
+
+- [ ] DistilBERT / RoBERTa fine-tuned classifier
+- [ ] Model comparison view (run all models in parallel, side-by-side)
+- [ ] Global SHAP summary plots (beeswarm, waterfall)
 - [ ] User feedback loop for active learning
-- [ ] Multilingual detection support
-- [ ] Citation graph analysis for source credibility
-- [ ] Browser extension for inline fact-checking
+- [ ] Multilingual detection
+- [ ] Citation and source graph analysis
+- [ ] Browser extension for inline credibility signals
+- [ ] Batch analysis API endpoint
 
 ---
 
-## Performance Notes
+## Disclaimer
 
-- **LIME inference**: ~3–5 seconds per explanation (300 perturbations, `clean_text_fast` for predict_fn)
-- **Sklearn prediction**: <100ms
-- **LSTM prediction**: ~200ms (first call may be slower due to TF warm-up)
-- **URL scraping**: 1–5s depending on target server
+TruthLens provides ML-based predictions and heuristic signals. Results should not be treated as definitive factual verification. Always cross-reference with primary sources.
 
 ---
-
-## Author
 
 Built by [Aditya Prabhudessai](https://github.com/adiprabhu04)
-
----
-
-*TruthLens — Explainable AI for misinformation research. Not a production fact-checker — a demonstration of end-to-end ML engineering with interpretability.*

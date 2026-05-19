@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -c ' *)",
+      "Bash(dir /b)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\" -Force | ForEach-Object { $_.Name })",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\backend\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\backend\\\\\", \"\"\\) })",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\\\\src\" -Recurse | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\\\\\", \"\"\\) })",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\" | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty Name)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\" -Recurse -Force | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\\\\\", \"\"\\) } | Sort-Object)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\\\\src\" -Recurse -Force | Where-Object { -not $_.PSIsContainer } | Select-Object -ExpandProperty FullName | ForEach-Object { $_.Replace\\(\"C:\\\\Users\\\\Aditya\\\\Desktop\\\\fake-news-detection\\\\frontend\\\\src\\\\\", \"\"\\) } | Sort-Object)",
+      "Bash(npm run *)"
+    ]
+  }
+}

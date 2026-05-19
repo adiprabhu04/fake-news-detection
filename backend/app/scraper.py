@@ -1,7 +1,10 @@
+import logging
 import re
 import requests
 from bs4 import BeautifulSoup
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 _HEADERS = {
     "User-Agent": (
@@ -16,8 +19,31 @@ def scrape_article(url: str) -> dict[str, Any]:
     try:
         resp = requests.get(url, headers=_HEADERS, timeout=15)
         resp.raise_for_status()
+
+    except requests.exceptions.Timeout:
+        logger.warning("scrape timeout | url=%s", url)
+        raise ValueError("The website took too long to respond.")
+
+    except requests.exceptions.ConnectionError as exc:
+        logger.warning("scrape connection error | url=%s | exc=%s", url, exc)
+        raise ValueError("Could not reach this website. Please check the URL.")
+
+    except requests.exceptions.HTTPError as exc:
+        status = exc.response.status_code if exc.response is not None else "?"
+        logger.warning("scrape HTTP %s | url=%s", status, url)
+        if status == 403:
+            raise ValueError("This website blocks automated article extraction.")
+        if status == 404:
+            raise ValueError("Article not found.")
+        if status == 429:
+            raise ValueError("This website is rate-limiting requests. Try again later.")
+        if isinstance(status, int) and status >= 500:
+            raise ValueError("The website is currently unavailable (server error).")
+        raise ValueError(f"The website returned an unexpected error (HTTP {status}).")
+
     except requests.RequestException as exc:
-        raise ValueError(f"Could not fetch URL: {exc}") from exc
+        logger.warning("scrape request error | url=%s | exc=%s", url, exc)
+        raise ValueError("Something went wrong while fetching this article.")
 
     soup = BeautifulSoup(resp.content, "lxml")
 
@@ -28,7 +54,7 @@ def scrape_article(url: str) -> dict[str, Any]:
     text = _extract_text(soup)
 
     if len(text) < 100:
-        raise ValueError("Could not extract meaningful content from this URL")
+        raise ValueError("Could not extract meaningful article content from this page.")
 
     truncated = text[:10_000]
     return {
